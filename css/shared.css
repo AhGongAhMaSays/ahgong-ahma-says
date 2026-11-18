@@ -1,0 +1,246 @@
+/* ============================================================
+   AhGong & AhMa Says — shared styles
+   Tokens, fonts, base rules, press feel, the header and footer, and
+   the content container. Every page loads this first. Paths resolve
+   from this file, so they work from any page depth.
+   ============================================================ */
+
+/* every weight/style actually used on the site, fully self-hosted — no
+   external request, and no gaps either: a weight/style combination with
+   no matching @font-face here doesn't just render a little off, it falls
+   all the way through to the next font in the stack (-apple-system/Segoe
+   UI, or Georgia/Times New Roman for headings), which is a much more
+   visible "the font changed" than any loading race ever was. */
+@font-face { font-family: 'Buenos Aires'; src: url('../Typeface%20-%20Buenos%20Aires/AOKBuenosAiresRegular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Buenos Aires'; src: url('../Typeface%20-%20Buenos%20Aires/AOKBuenosAiresRegularItalic.ttf') format('truetype'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Buenos Aires'; src: url('../Typeface%20-%20Buenos%20Aires/AOKBuenosAiresSemiBold.ttf') format('truetype'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Buenos Aires'; src: url('../Typeface%20-%20Buenos%20Aires/AOKBuenosAiresSemiBoldItalic.ttf') format('truetype'); font-weight: 600; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Buenos Aires'; src: url('../Typeface%20-%20Buenos%20Aires/AOKBuenosAiresBold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Buenos Aires'; src: url('../Typeface%20-%20Buenos%20Aires/AOKBuenosAiresBoldItalic.ttf') format('truetype'); font-weight: 700; font-style: italic; font-display: swap; }
+
+/* self-hosted (not Google Fonts) — the external request plus @view-transition
+   below was what originally stalled cross-page navigation by a few seconds,
+   and even after switching to font-display:swap/optional that external
+   dependency still meant the heading font could win or lose its race to
+   first paint from one page load to the next, which on a fast refresh read
+   as the font visibly changing between reloads. A local file served from
+   this same origin starts loading immediately with the rest of the page
+   and has no such race. */
+@font-face { font-family: 'Crimson Text'; src: url('../Typeface%20-%20Crimson%20Text/CrimsonText-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Crimson Text'; src: url('../Typeface%20-%20Crimson%20Text/CrimsonText-Italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Crimson Text'; src: url('../Typeface%20-%20Crimson%20Text/CrimsonText-SemiBold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Crimson Text'; src: url('../Typeface%20-%20Crimson%20Text/CrimsonText-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+
+/* smooth crossfade between pages instead of a hard cut — every page loads
+   this file, so any link between them gets it automatically. Browsers
+   without support (Firefox, Safari) just navigate instantly, same as before. */
+@view-transition {
+  navigation: auto;
+}
+
+:root {
+  --cream: #F2ECE2;
+  --ink:   #3B3556;
+  --serif: 'Crimson Text', Georgia, 'Times New Roman', serif;   /* headings */
+  --sans:  'Buenos Aires', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;   /* body */
+
+  --container-pad: 80px;   /* side padding of the content container */
+
+  /* header icons (logo, EXIT, 中文, the game's Next arrow). The desktop
+     size is 90% of the old 40–56px range. */
+  --icon-size:        calc(clamp(40px, 3.96vw, 56px) * .9);
+  --logo-size:        clamp(67px, 6.58vw, 94px);
+
+  /* header and footer heights. The content box always sits between them
+     (CONTENT RULE below). The header's height comes from its tallest item,
+     the logo (.528 of its width) or an icon (.976 of its width). */
+  --chrome-content-h: max(var(--logo-size) * .528, var(--icon-size) * .976);
+  --chrome-top-h:     calc(.9 * (60px + var(--chrome-content-h)) - 10px);
+  --chrome-bottom-h:  calc(52px + clamp(15px, 1.5vw, 20px));
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* reserve the scrollbar's width on every page, whether or not that page's
+   content actually scrolls — otherwise a page without a scrollbar renders
+   ~15px wider than the (scrollable) landing page, shifting the right-aligned
+   header icon out of position between pages */
+html { overflow-y: auto; overscroll-behavior-x: none; scrollbar-gutter: stable; background: var(--cream); }   /* same colour as body, so there's no white flash while the next page is loading */
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--sans);
+  letter-spacing: 0.5pt;
+  overscroll-behavior-x: none;   /* a sideways swipe during a game (flipping/dragging across cards) was triggering the mobile browser's own edge-swipe "go back" gesture, which is what read as the game randomly bouncing back to the landing page */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; cursor: pointer; }
+
+h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(1.44rem, 3vw, 2.4rem);
+  line-height: 1.12;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+
+/* sized exactly halfway between h1 and the game popups' old one-off heading
+   size (clamp(.84rem, 1.56vw, 1.2rem)) */
+h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(1.14rem, 2.28vw, 1.8rem);
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+
+/* the landing page's "ah gong, how are you?" size — also what the game
+   popups' h2 used to be, before h2 became its own, bigger, base style */
+h3 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(.84rem, 1.56vw, 1.2rem);
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+
+/* ---------- press-in feel, shared by every button ---------- */
+
+.press {
+  transition: transform .14s cubic-bezier(.34, 1.1, .4, 1);
+  /* no blanket will-change here: this class is on nearly every button/
+     card/link on the site, so always-on layer promotion for all of them
+     adds up to real compositing overhead on mobile — exactly the kind
+     of thing that reads as "lag after every button press". The .14s
+     transform transition itself composites fine without it; elements
+     that genuinely animate continuously (confetti, scroll-driven
+     landing elements, the card flip) already set their own will-change. */
+}
+.press:hover  { transform: translateY(1.5px) scale(.985); }
+.press:active { transform: translateY(3px) scale(.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .press { transition: none; }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ============================================================
+   HEADER AND FOOTER — identical on every page
+   ============================================================ */
+
+.chrome-top,
+.chrome-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  pointer-events: none;              /* clicks fall through the bar's empty space */
+}
+.chrome-top > *,
+.chrome-bottom > * { pointer-events: auto; }
+
+/* the header is --chrome-top-h tall. Its top padding is whatever is left
+   after the content, and the bottom padding is 20px. */
+.chrome-top {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  padding: calc(var(--chrome-top-h) - var(--chrome-content-h) - 20px) 40px 20px;
+}
+.chrome-bottom {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  gap: 24px;
+  padding: 39px 40px 13px;   /* content nudged 13px down within the same bar height (top +13, bottom -13) */
+}
+
+.chrome-top-right { display: flex; align-items: center; gap: 14px; }
+
+.logo { display: block; line-height: 0; }
+.logo img { width: var(--logo-size); height: auto; }
+
+.icon-btn { display: block; line-height: 0; border: none; background: none; padding: 0; cursor: pointer; }
+.icon-btn img { width: var(--icon-size); height: auto; display: block; }
+
+.tagline {
+  max-width: none;
+  white-space: nowrap;
+  font-size: .65rem;
+  font-weight: 400;
+  line-height: 1.35;
+  color: #7c6f4e;
+}
+
+.socials { display: flex; align-items: center; gap: 24px; transform: translate(5px, -5px); }
+.social { display: block; line-height: 0; cursor: pointer; }
+.social img { width: clamp(15px, 1.5vw, 20px); height: auto; display: block; }
+
+/* ============================================================
+   CONTENT CONTAINER — every page
+   CONTENT RULE: page content sits in the centred .container, between the
+   header and the footer, and never overlaps either. Header and footer
+   stay full-bleed. Any page that positions .container itself must inset
+   it by --chrome-top-h (top) and --chrome-bottom-h (bottom).
+
+   NO-SCROLL RULE: that content container must never need to scroll, on
+   any page, at any normal desktop size — content is sized to fit it
+   (vh-aware clamp()/min()/container queries), not shrunk after the fact
+   by letting it overflow into a scrollbar. overflow-y: auto may still be
+   left on a container as a last-resort safety net, but it should never
+   actually trigger; verify by checking scrollHeight === clientHeight
+   across a spread of viewport heights (e.g. 480–1080px), not just the
+   default preview size. This doesn't apply to the landing page's own
+   full-document scroll-snap (.scroll-wrap) — that's a deliberate scene
+   transition, not a content container overflowing.
+   ============================================================ */
+
+.container {
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: var(--container-pad);
+}
+
+/* ============================================================
+   PHONE — one breakpoint for every page, so the header and footer look
+   the same at every phone and tablet width
+   ============================================================ */
+
+@media (max-width: 860px) {
+  :root {
+    --container-pad:    18px;
+    --logo-size:        clamp(81px, 7.89vw, 114px);
+    --icon-size:        clamp(48px, 4.75vw, 68px);
+    --chrome-content-h: max(var(--logo-size) * .528, var(--icon-size) * .976);
+    --chrome-top-h:     calc(.9 * (32px + var(--chrome-content-h)));
+    --chrome-bottom-h:  98px;   /* the phone footer: one row of icons and the wrapped sentence */
+  }
+
+  .chrome-top    { padding: calc(var(--chrome-top-h) - var(--chrome-content-h) - 6px) 18px 6px; background: transparent; }   /* 10px more on top, 10px less on the bottom: same bar height */
+
+  .chrome-bottom { padding: 18px 38px; flex-direction: column; align-items: center; text-align: center; gap: 18px; }
+  .tagline       { white-space: normal; font-size: clamp(.36rem, 1.8vw, .58rem); line-height: 1.8; }
+  .socials       { order: -1; }   /* the icons above the sentence */
+  .social img    { width: clamp(19.5px, 1.95vw, 26px); }   /* 30% bigger than the desktop icons */
+
+  /* the official mobile/tablet size for every h1/h2/h3 site-wide — each
+     one originated from a specific page's own heading (landing's "ah gong,
+     li ho bo?" for h2, its "ah gong, how are you?" for h3, and the game
+     homepage's heading for h1), increased, then promoted here so every
+     other h1/h2/h3 element gets the same consistent mobile scale */
+  h1 { font-size: clamp(1.68rem, min(4.8vw, 8.4vh), 3.84rem); }
+  h2 { font-size: clamp(1.8216rem, 3.795vw, 3.036rem); }
+  h3 { font-size: clamp(1.0626rem, 1.9734vw, 1.518rem); }
+}

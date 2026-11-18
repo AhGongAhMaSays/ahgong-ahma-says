@@ -1,0 +1,232 @@
+/* ============================================================
+   AhGong & AhMa Says — landing page
+   Shared tokens, fonts, header/footer and container live in shared.css.
+   ============================================================ */
+
+html {
+  scroll-snap-type: y mandatory;   /* one gesture = one scene */
+}
+
+body { overflow-x: hidden; }
+
+/* ============================================================
+   SCROLL-DRIVEN STAGE
+   ============================================================ */
+
+/* three full-height spacers give the scroll its runway + snap points */
+.scroll-wrap { position: relative; }
+.snap {
+  height: 100vh;    /* fallback for browsers without dvh support */
+  height: 100dvh;   /* tracks the real visible viewport as mobile browser chrome shows/hides mid-swipe —
+                       with a static 100vh, that chrome animation constantly shifts the snap points out from
+                       under the gesture, which is what reads as "not locked at each frame" */
+  scroll-snap-align: start;
+  scroll-snap-stop: always;   /* can't skip a scene in one flick */
+}
+
+/* the visuals sit on a fixed layer; the spacers scroll behind it.
+   The notebook-grid texture is painted here rather than on body with
+   background-attachment: fixed, which iOS Safari ignores. */
+.stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+  background-image: url('../00%20Shared%20Assets/bg-img.png');
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: cover;
+}
+
+/* the content column, pinned between the header and the footer (CONTENT RULE in shared.css) */
+.stage > .container {
+  position: absolute;
+  top: var(--chrome-top-h);
+  bottom: var(--chrome-bottom-h);
+  left: 0;
+  right: 0;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* ---------- scene 1 + 2 : illustration + phrases ---------- */
+
+.scene-hero {
+  justify-content: center;
+  align-items: center;
+  gap: clamp(20px, 4vw, 64px);
+  padding: 0 clamp(24px, 5vw, 72px);
+  /* nudged 5vw right of centre; Y stays driven by the scroll animation */
+  transform: translate(5vw, var(--hero-y, 0));
+  opacity: var(--hero-o, 1);
+  will-change: transform, opacity;   /* this moves on every scroll frame — promote it to its own layer up front instead of re-promoting/repainting each frame, which is what read as scroll lag */
+}
+
+.illo { flex: 0 0 auto; }
+.illo img {
+  height: clamp(259px, 47.5vh, 490px);
+  width: auto;
+  display: block;
+}
+
+.copy {
+  position: relative;
+  flex: 0 1 380px;
+  min-height: 30vh;
+}
+
+.phrase {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  transform: translateY(-50%);
+}
+
+/* .phrase-head's own styling now lives in the site-wide h1 base rule
+   (css/shared.css) — this class is kept only for the mobile nowrap
+   override below, which targets it by name */
+
+/* phrase one */
+.phrase--one {
+  transform: translateY(calc(-50% + var(--p1-y, 0px)));
+  opacity: var(--p1-o, 1);
+  will-change: transform, opacity;
+}
+.audio-btn {
+  margin-top: 20px;
+  padding: 0;
+  border: none;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+}
+.audio-btn img { width: clamp(31px, 3.12vw, 40px); height: auto; display: block; }
+
+.means {
+  margin-top: 30px;
+  font-family: var(--sans);
+  font-size: .54rem;
+  letter-spacing: 0.5pt;
+  color: #9a7d34;
+}
+/* .meaning's own styling now lives in the site-wide h3 base rule
+   (css/shared.css) — this class is kept only for its margin-top, here
+   and in the mobile override below */
+.meaning { margin-top: 22px; }
+
+/* phrase two — starts a little low + hidden, rises into place */
+.phrase--two {
+  transform: translateY(calc(-50% + var(--p2-y, 90px)));
+  opacity: var(--p2-o, 0);
+  will-change: transform, opacity;
+}
+
+/* ---------- scene 3 : the two big buttons ---------- */
+
+.scene-cta {
+  justify-content: center;
+  gap: clamp(90px, 18vw, 300px);
+  transform: translateY(var(--cta-y, 100vh));
+  will-change: transform;
+}
+
+.big-btn {
+  display: block;
+  line-height: 0;
+  text-decoration: none;
+  transform: translateY(var(--b-y, 40px)) scale(var(--b-s, .8));
+  opacity: var(--b-o, 0);
+  will-change: transform, opacity;
+}
+.big-btn img {
+  width: clamp(136.8px, 15.12vw, 223.2px);   /* 20% bigger */
+  height: auto;
+  display: block;
+}
+.big-btn.press:hover  { transform: translateY(calc(var(--b-y, 0px) + 3px))  scale(calc(var(--b-s, 1) * .99)); }
+.big-btn.press:active { transform: translateY(calc(var(--b-y, 0px) + 8px))  scale(calc(var(--b-s, 1) * .975)); }
+
+/* ============================================================
+   RESPONSIVE — the scroll mechanism is unchanged; only the composition
+   inside each scene adapts (illustration over text, smaller everything)
+   ============================================================ */
+
+/* ---------- idle scroll hint ---------- */
+
+.scroll-hint {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--chrome-bottom-h) + 20px);
+  transform: translateX(-50%);
+  z-index: 15;   /* above the stage, below the header/footer chrome */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .4s ease;
+}
+.scroll-hint.is-visible { opacity: .65; }
+
+.scroll-hint-arrow {
+  width: 22px;
+  height: 22px;
+  animation: scroll-hint-bounce 1.4s ease-in-out infinite;
+}
+.scroll-hint-text {
+  font-family: var(--sans);
+  font-size: .62rem;
+  letter-spacing: 0.5pt;
+}
+
+@keyframes scroll-hint-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-hint-arrow { animation: none; }
+}
+
+@media (max-width: 860px) {
+  .scene-hero {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(14px, 3.5vh, 24px);
+    text-align: center;
+    padding: 0 20px;                  /* the container already sits clear of the header and footer */
+    transform: translateY(var(--hero-y, 0));   /* no desktop x-nudge here */
+  }
+  .illo img { height: clamp(156px, 31.68vh, 288px); width: auto; }
+  .copy { flex: 0 1 auto; width: 100%; min-height: clamp(190px, 32vh, 260px); }
+
+  /* keep the opening line — "'ah gong, li ho bo?'" — on one row */
+  .phrase--one .phrase-head { white-space: nowrap; }
+  .phrase--one .phrase-head br { display: none; }
+
+  /* 15% bigger again — this is also now the official h2 mobile size
+     (css/shared.css), so .phrase-head (an h1 tag) needs its own explicit
+     match here. .meaning is an h3 tag and its own +15% became h3's own
+     mobile size directly, so it just inherits — no override needed. */
+  .phrase-head { font-size: clamp(1.8216rem, 3.795vw, 3.036rem); }
+
+  .audio-btn { margin-top: 14px; }
+  .means     { margin-top: 16px; }
+  .meaning   { margin-top: 12px; }
+
+  .scene-cta { flex-direction: column; gap: clamp(24px, 6vh, 40px); }  /* stacked 1x2 */
+  .big-btn img { width: clamp(109.2px, 29.172vw, 168px); }   /* 30% bigger than before, then 20% bigger again */
+
+  /* the hint is tuned for a mouse-idle cursor (js/landing.js) — meaningless
+     on a touch device, so it never shows here regardless of that JS state */
+  .scroll-hint { display: none; }
+}

@@ -1,0 +1,324 @@
+/* ============================================================
+   AhGong & AhMa Says — Game Homepage
+   The page between the landing page and the games themselves.
+   Shared tokens, fonts, header/footer and container live in shared.css.
+   ============================================================ */
+
+:root {
+  --game-card-h: clamp(100px, min(16.5vw, 28.6vh), 242px);   /* base card height — card 1/2/3 scale off this, see below */
+}
+
+/* same background as the landing page's .stage (css/landing.css), covering
+   the full screen (not just .games-main, which only spans the area between
+   the header and footer — see the CONTENT RULE below). A real position:fixed
+   element with its own box, not a background painted directly on <html>:
+   the root element's special canvas-background painting is spec-correct,
+   but mobile browsers are inconsistent about reflowing/repainting it as
+   the page's actual content height changes (e.g. .games-main's internal
+   mobile scroll, or the address bar show/hide resizing the viewport),
+   which is what made it work in this session's own desktop/emulated-mobile
+   testing but not reliably on a real phone. A fixed, explicitly-sized div
+   behaves identically to the landing page's own .stage everywhere.
+   z-index: -1 keeps it behind everything without needing every other
+   element on the page to carry its own stacking context. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image: url('../00%20Shared%20Assets/bg-img.png');
+  background-repeat: no-repeat;
+  background-position: top center;
+  background-size: cover;
+}
+
+/* CONTENT RULE: fixed between the header and footer, same as the game
+   page's #app — never under either. Sized (via the vh-aware clamps below)
+   to always fit inside that box, so this never actually scrolls on desktop
+   — no content container on any page does on desktop (site-wide rule,
+   css/shared.css). On mobile this page is a deliberate exception: once the
+   3 cards stack and grow to a comfortable size, the content scrolls inside
+   this box (header/footer stay fixed) — normal mobile behaviour, not a
+   last-resort safety net like elsewhere. See the mobile media query below. */
+.games-main {
+  position: fixed;
+  top: var(--chrome-top-h);
+  bottom: var(--chrome-bottom-h);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: safe center;   /* safety net: top-aligned instead of clipping both ends, if content is ever taller than the box */
+  overflow-y: auto;   /* safety net only — never meant to actually trigger */
+  text-align: center;
+}
+
+.games-h2, .games-sub { transform: translateY(-15px); }   /* heading and subheading, 20px higher than before (was 5px down) */
+
+/* the whole block nudged up for visual balance — eases off on short
+   windows (part of the vh-aware sizing below that keeps everything inside
+   the box with no scrolling needed) */
+@media (min-width: 861px) {
+  .games-content { margin-top: clamp(-40px, -4vh, -10px); }
+  .games-break { display: none; }   /* the heading/subheading fit on one line on desktop — the forced break below is mobile-only */
+}
+
+.games-h2 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(1.4rem, min(4vw, 7vh), 3.2rem);
+  line-height: 1.12;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+
+.games-sub {
+  margin-top: clamp(6px, 1.5vh, 14px);
+  font-family: var(--sans);
+  letter-spacing: 0.5pt;
+  font-size: clamp(.68rem, 1.28vw, .84rem);   /* 20% smaller than before */
+  color: #7c6f4e;
+}
+
+/* ---------- card grid ---------- */
+/* one row of 3: landscape/portrait/landscape, matching the reference.
+   Cards share a height, not a column width, so a portrait card reads as
+   roughly the same visual size as a landscape one, just narrower. */
+
+.games-grid {
+  margin-top: clamp(0px, calc(min(6vw, 9vh) - 20px), 44px);
+  display: flex;
+  align-items: flex-end;   /* the reference shares a common bottom edge, not a centre line */
+  justify-content: center;
+  gap: clamp(24px, 4vw, 56px);
+  width: 100%;
+}
+
+.game-card {
+  position: relative;
+  display: block;
+  height: var(--game-card-h);
+  flex: 0 0 auto;
+  line-height: 0;
+  text-decoration: none;
+}
+.game-card--landscape { aspect-ratio: 290 / 200; }
+.game-card--portrait  { aspect-ratio: 200 / 290; }
+
+.game-card-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+/* the sticky-note tag, overlapping the card's edge — position and side
+   (top for card 2, bottom-left/right for the others) follow the reference */
+.game-card-tag {
+  position: absolute;
+  left: 50%;
+  width: 78%;
+  max-width: 230px;
+  height: auto;
+}
+
+.game-card-players {
+  position: absolute;
+  font-family: var(--sans);
+  letter-spacing: 0.5pt;
+  font-size: clamp(.56rem, 1.04vw, .72rem);
+  line-height: normal;   /* .game-card sets line-height:0 for its image children — undo that here */
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* the "coming soon" badge, overlapping the card's right edge, spinning */
+.game-card-badge {
+  position: absolute;
+  top: calc(40% - 5px);
+  right: -20px;
+  width: 30%;
+  max-width: 76px;
+  height: auto;
+  animation: game-card-badge-spin 6s linear infinite;
+}
+
+@keyframes game-card-badge-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-card-badge { animation: none; }
+}
+
+/* a card with nowhere to go yet: no press feel, softened illustration */
+.game-card--soon { cursor: default; }
+.game-card--soon .game-card-img { opacity: .55; }
+
+/* desktop keeps the blank card + spinning marquee; mobile replaces both
+   with this plain heading instead (see the mobile media query) */
+.game-card-soon-text { display: none; }
+
+/* each card's rotation and tag placement, matching the reference's
+   scattered-photos layout: card 1's tag sits bottom-left, card 2's sits
+   above, card 3 is a plain "coming soon" */
+.game-card:nth-child(1) { height: calc(var(--game-card-h) * 1.104); align-self: center; transform: rotate(-5deg); }   /* 20% smaller, then 20% bigger, then 15% bigger again; centred with card 3 instead of bottom-aligned + nudged up */
+.game-card:nth-child(1) .game-card-tag {
+  bottom: -19px;
+  left: 20%;
+  width: 89.47575%;      /* 15% bigger than the shared 78%, then 5% bigger, reverted the later +10%, then 5% smaller again */
+  max-width: 263.34px;   /* 15% bigger than the shared 230px cap, then 5% bigger, reverted the later +10%, then 5% smaller again */
+  transform: translateX(-50%) rotate(0deg);   /* 1deg clockwise from -1deg */
+}
+/* sits directly below the tag (not centred under the whole card), with no
+   counter-rotation — it inherits the card's -5deg tilt the same way the
+   tag does, so the two read as parallel */
+.game-card:nth-child(1) .game-card-players {
+  --card1-w: calc(var(--game-card-h) * 1.104 * 290 / 200);
+  --tag1-h: calc(min(calc(var(--card1-w) * .8947575), 263.34px) * 94 / 458);
+  top: 100%;
+  left: 20%;
+  margin-top: calc(min(calc(19px + var(--tag1-h) + 10px), clamp(14px, calc(7vh - 16px), 42px)) + 5px);   /* exact clearance (tag's -19px offset + its height + a small gap), capped by the page's available room on a short viewport, then nudged down another 5px — below ~620px height there isn't space for full clearance without scrolling, so a small overlap there is the deliberate trade-off (no-scroll is the harder rule) */
+  transform: translateX(-50%) rotate(.5deg);   /* nudged clockwise .5deg off the card's own -5deg tilt */
+}
+
+.game-card:nth-child(2) { height: calc(var(--game-card-h) * 1.43); transform: rotate(-1deg); }   /* 30% bigger, then 10% more */
+.game-card:nth-child(2) .game-card-img { opacity: 1; }   /* full opacity, unlike the other "coming soon" cards */
+.game-card:nth-child(2) .game-card-tag {
+  /* card 2's own width, re-derived here in px/vw/vh terms (no %) — a
+     percentage means something different depending on which property
+     it ends up in (width vs height), so it can't be shared between them
+     the way a plain length can */
+  --card2-w: calc(var(--game-card-h) * 1.43 * 200 / 290);
+  --tag2-old-w: min(calc(var(--card2-w) * 1.462461), 431.2px);   /* = the old 146.2461% / 431.2px formula, bumped to visually match card 1's tag text size, then 5% bigger, then 10% bigger again */
+  top: -15px;
+  bottom: auto;
+  max-width: none;   /* the shared base rule's 230px cap would otherwise clip the formula below */
+  width: calc(var(--tag2-old-w) * .9);   /* narrowed 10%, visually matched to card 1's tag font size */
+  height: calc(var(--tag2-old-w) * 94 / 458);   /* kept at the pre-narrow height (asset's own 458:94 ratio) — the image stretches to fit instead of shrinking */
+  transform: translate(calc(-45% + 30px), -5%) rotate(1deg);   /* sits on the card's top edge, shifted right of centre, then nudged up and right another 5% */
+}
+/* centred below the card, matching the reference */
+.game-card:nth-child(2) .game-card-players {
+  top: 100%;
+  left: 50%;
+  margin-top: 12px;
+  transform: translateX(-50%) rotate(1deg);
+}
+
+.game-card:nth-child(3) { height: calc(var(--game-card-h) * 1.15); align-self: center; transform: rotate(5deg); }   /* 15% bigger; centred with card 1 instead of bottom-aligned + nudged up */
+
+/* ---------- mobile view ----------
+   below this, the row of 3 scattered-photo cards becomes a single stacked
+   column — a deliberately different composition from desktop, not just a
+   shrunk-down version of it. Card-specific rotation/tag/player-text
+   placement (above) still applies underneath; only the grid's own
+   direction and alignment change here. */
+@media (max-width: 860px) {
+  .games-main {
+    /* "safe center" is meant to fall back to start-aligned when content
+       overflows, so the overflow only ever shows up on one side (scrollable)
+       instead of being split above AND below (half of it hidden behind the
+       fixed header, unreachable). Some mobile browsers don't honour "safe"
+       reliably, which is exactly what was hiding the heading behind the
+       header on first load — flex-start sidesteps the issue by always
+       starting flush at the top regardless of "safe" support. */
+    justify-content: flex-start;
+    padding-top: clamp(66.24px, 9.936vh, 112.608px);   /* +20% over baseline, then +15%, then +20%, then +100% (doubled), so content sits clear of the header */
+    overflow-y: auto;   /* a real, expected scroll on mobile now — not the safety-net-only it is everywhere else on the site */
+  }
+  .games-grid { flex-direction: column; align-items: center; gap: 60px; width: 100%; }   /* the space above each card's tag (first thing in its stack) — 40px, then 50% bigger */
+
+  /* 20% bigger than the desktop formula — this is also now the official h1
+     mobile size (css/shared.css), so .games-h2 (an h2 tag) needs its own
+     explicit match here. OK to wrap to more than one line. Side padding
+     keeps the (now often 2-line) heading and subheading clear of the
+     screen edges. */
+  .games-h2  { font-size: clamp(1.68rem, min(4.8vw, 8.4vh), 3.84rem); padding-inline: 28px; }
+  .games-sub { padding-inline: 28px; padding-bottom: 70px; }   /* doubled again */
+
+  /* mobile cards: a clean vertical stack — title tag, then image, then
+     player count — instead of desktop's overlapping "scattered photos"
+     sticky-note composition. That composition (absolutely-positioned tag
+     and player text, tuned to overlap a specific card size/tilt) stopped
+     working once cards got this much bigger on mobile: the player count
+     started colliding with the next card's tag. A plain stack sidesteps
+     that entirely, and reads better at this size anyway. The image fills
+     the full width of the content container, scaling the whole card with
+     it (height:auto everywhere below, in place of desktop's fixed
+     --game-card-h-based heights). Rules are repeated against the
+     nth-child selectors because those are more specific than a plain
+     class and would otherwise keep winning over these. */
+  .game-card,
+  .game-card:nth-child(1),
+  .game-card:nth-child(2),
+  .game-card:nth-child(3) {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    height: auto;
+    transform: none;
+  }
+  .game-card--landscape,
+  .game-card--portrait { aspect-ratio: auto; }   /* let height follow content (tag + image + players), not a fixed ratio */
+
+  /* the tag drops down to overlap the image, centred on its top edge:
+     margin-bottom is half the tag's own rendered height (a plain % margin
+     resolves against the flex container's width, same reference the
+     tag's own width uses, so "half my own height" is expressible as a
+     width-relative percentage: width% × 94/458 asset ratio ÷ 2). z-index
+     keeps the tag painting above the image, which comes later in DOM
+     order and would otherwise cover the overlap. Card 1 and 2's tags now
+     share the same width/formula (card 2 used to be bigger; matched down
+     to card 1's size) but still have to be set per nth-child — the
+     desktop rules they're overriding are themselves nth-child-qualified,
+     which out-specifies a plain shared class rule regardless of source
+     order. */
+  .game-card-tag {
+    position: static;
+    order: -1;
+    inset: auto;
+    z-index: 1;
+  }
+  .game-card:nth-child(1) .game-card-tag {
+    width: 60%;      /* 75% base, then 20% smaller */
+    max-width: none;   /* the desktop rule's 263.34px cap would otherwise clip this at wider "mobile" widths */
+    margin-bottom: -6.1572%;
+    transform: none;
+  }
+  .game-card:nth-child(2) .game-card-tag {
+    width: 60%;      /* 75% base, then 20% bigger, then decreased to match card 1 */
+    height: auto;   /* the desktop rule's height:calc(--tag2-old-w * 94/458) used a custom property chain that's meaningless on mobile (it traces back to --game-card-h, which no longer controls anything here) — auto lets the image's own aspect ratio apply to the new width instead */
+    margin-bottom: -6.1572%;
+    transform: none;
+  }
+
+  .game-card-img {
+    order: 0;
+    position: static;
+    width: 100%;
+    height: auto;
+    margin-bottom: 21px;   /* the space below the image, before the player count — 14px (the old shared flex-gap), then 50% bigger */
+  }
+  .game-card:nth-child(2) .game-card-img { width: 80%; }   /* 20% smaller */
+
+  .game-card-players,
+  .game-card:nth-child(1) .game-card-players,
+  .game-card:nth-child(2) .game-card-players {
+    position: static;
+    order: 1;
+    inset: auto;
+    margin-top: 0;
+    transform: none;
+    font-size: clamp(.672rem, 1.248vw, .864rem);   /* 20% bigger */
+  }
+
+  /* card 3: the blank card + spinning marquee are replaced outright by a
+     plain heading on mobile (see .game-card-soon-text above) */
+  .game-card:nth-child(3) .game-card-img,
+  .game-card:nth-child(3) .game-card-badge { display: none; }
+  .game-card-soon-text { display: block; padding: 32px 0 48px; }   /* bottom increased 50% over the matching top padding */
+}

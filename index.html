@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AhGong &amp; AhMa Says</title>
+  <meta name="description" content="A multi-generational platform that encourages meaningful interactions through the use of dialect." />
+  <link rel="stylesheet" href="css/shared.css" />
+  <link rel="stylesheet" href="css/landing.css" />
+</head>
+<body>
+  <!-- ============ PERSISTENT CHROME ============ -->
+  <header class="chrome-top">
+    <a href="#" class="logo" aria-label="AhGong &amp; AhMa Says — home">
+      <img src="assets/logo-mark.png" alt="AhGong &amp; AhMa Says" />
+    </a>
+    <button type="button" class="icon-btn press" aria-label="Switch language to Chinese">
+      <img src="00%20Shared%20Assets/btn-langchi%2080x78px.png" alt="中文" />
+    </button>
+  </header>
+
+  <footer class="chrome-bottom">
+    <p class="tagline">we are a multi-generational platform that encourages meaningful interactions through the use of dialect</p>
+    <nav class="socials" aria-label="Social and contact links">
+      <a href="#" class="social press" aria-label="Instagram"><img src="00%20Shared%20Assets/btn-ig%2022x22px.png" alt="Instagram" /></a>
+      <a href="#" class="social press" aria-label="Email us"><img src="00%20Shared%20Assets/btn-email%2022x22px.png" alt="Email" /></a>
+      <a href="#" class="social press" aria-label="Call or WhatsApp us"><img src="00%20Shared%20Assets/btn-wa%2022x22px.png" alt="Phone" /></a>
+      <a href="#" class="social press" aria-label="Send us a message"><img src="00%20Shared%20Assets/btn-contactform%2022x22px.png" alt="Message" /></a>
+    </nav>
+  </footer>
+
+  <!-- ============ SCROLL-DRIVEN STAGE ============ -->
+  <div class="scroll-wrap">
+    <div class="stage">
+      <div class="container">
+
+      <section class="scene scene-hero" aria-label="Introduction">
+        <div class="illo">
+          <img src="assets/illustration.png" alt="An ah gong kneels down to talk with his grandchild" />
+        </div>
+
+        <div class="copy">
+          <div class="phrase phrase--one">
+            <h1 class="phrase-head">&lsquo;ah&nbsp;gong,<br /> li&nbsp;ho&nbsp;bo?&rsquo;</h1>
+            <button type="button" class="audio-btn press" aria-label="Hear &lsquo;ah gong, li ho bo&rsquo; spoken">
+              <img src="assets/btn-audio.png" alt="" />
+            </button>
+            <p class="means">that means,</p>
+            <h3 class="meaning">ah gong, how are you?</h3>
+          </div>
+
+          <div class="phrase phrase--two" aria-hidden="true">
+            <h1 class="phrase-head">say more than<br />just &lsquo;hello&rsquo; to<br />ah gong ah ma.</h1>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene scene-cta" aria-label="Choose a path">
+        <a href="games.html" class="big-btn press"><img src="assets/btn-play.png" alt="Play" /></a>
+        <a href="#" class="big-btn press"><img src="assets/btn-learn.png" alt="Learn" /></a>
+      </section>
+      </div>
+    </div>
+
+    <!-- scroll runway: one snap point per scene -->
+    <div class="snap" aria-hidden="true"></div>
+    <div class="snap" aria-hidden="true"></div>
+    <div class="snap" aria-hidden="true"></div>
+  </div>
+
+  <!-- shown after 5s of no cursor movement, hidden on the last scene (see js/landing.js) -->
+  <div class="scroll-hint" aria-hidden="true">
+    <span class="scroll-hint-text">scroll down</span>
+    <svg class="scroll-hint-arrow" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 4v14m0 0l-6-6m6 6l6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </div>
+
+
+  <script src="js/landing.js"></script>
+</body>
+</html>

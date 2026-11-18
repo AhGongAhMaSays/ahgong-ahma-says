@@ -1,0 +1,536 @@
+/* ============================================================
+   AhGong & AhMa Says — Dialect Match
+   Shared tokens, fonts, header/footer and container: ../../css/shared.css.
+   Player colours and the card order live in js/game.js.
+   ============================================================ */
+
+:root {
+  --game-pad: 21.6px;     /* space above and below the content box */
+  --gap: 12px;            /* gap between name boxes, cards and results columns */
+  --card-scale: .968625;  /* board card size as a share of the largest size that fits */
+  --board-reserve: 170px; /* height the name row + turn banner + padding take up, roughly */
+}
+
+/* ---------- content box ----------
+   Everything in the game sits in this box, between the header and the
+   footer, and is sized to always fit inside it — no page ever scrolls
+   (site-wide rule, see css/shared.css). overflow-y here is a safety net
+   only, never meant to actually trigger. */
+#app {
+  position: fixed;
+  top: var(--chrome-top-h);
+  bottom: var(--chrome-bottom-h);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;   /* iOS: smoother scrolling, fewer stuck repaints */
+  touch-action: pan-y;   /* a sideways drag across cards has no horizontal content to pan — without this, some mobile browsers read it as their own edge-swipe "go back" gesture instead */
+  padding-block: var(--game-pad);
+}
+
+/* in-game: the footer is hidden, so the board gets the full height below the header */
+body.in-game { --chrome-bottom-h: 0px; }
+body.in-game .chrome-bottom { display: none; }
+
+.screen { width: 100%; display: flex; flex-direction: column; align-items: center; margin: auto; }
+
+/* ============================================================
+   POPUP — count and name screens
+   ============================================================ */
+
+/* The reference popup is 1938:1250 and about 64.5% of the page width.
+   It never grows taller than the content box. Children use container
+   units (cqw), so their proportions follow the popup at any size. */
+.popup {
+  position: relative;
+  --popup-h-avail: calc(100dvh - var(--chrome-top-h) - var(--chrome-bottom-h) - 48px);   /* hard ceiling — the content box never scrolls (site-wide rule) */
+  --popup-w: min(81.25vw, 1225px, calc(100vw - 2 * var(--container-pad)), calc(var(--popup-h-avail) * 1938 / 1250));   /* 25% bigger — capped to the container's actual padded width too, since vw alone doesn't know about --container-pad and would otherwise overflow it */
+  width: var(--popup-w);
+  height: min(calc(var(--popup-w) * 1250 / 1938 * 1.6), var(--popup-h-avail));   /* 60% taller than the card art's native proportions, still capped to the available height */
+  background: url('../../00%20Shared%20Assets/bg-popup%20550x520px.png') center / 100% 100% no-repeat;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  container-type: size;
+  gap: 6.5cqw;
+  padding: 6% 8%;
+  text-align: center;
+}
+
+/* mobile only (≤860px): popup shorter, count heading bigger — desktop
+   stays at the sizes set above */
+@media (max-width: 860px) {
+  .popup { height: min(calc(var(--popup-w) * 1250 / 1938 * 1.12), calc(var(--popup-h-avail) * 0.7)); }   /* 60% taller than native, then 30% shorter */
+  .popup .h2 { font-size: clamp(1.10352rem, 2.20704vw, 1.7424rem); }   /* same size on every popup screen, including "Player N" — 20% smaller than the site h2, then 10% bigger, then 10% bigger again */
+}
+
+/* count screen: circles sit well apart (reference gap ≈ 1.4× the circle width) */
+.count-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8.6cqw 22.3cqw;
+  width: 90cqw;
+}
+
+.count-btn {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  padding: 0;
+  line-height: 0;
+}
+.count-btn img { width: 100%; height: auto; display: block; transform: translateY(calc(-8px - 4vh)) scale(1.265); }
+
+/* name screen — positions follow Matching Game 2.1.0: title near the top,
+   field in the middle, arrow below. The field is the empty
+   field-Nplayername PNG as its background; the input sits on top. */
+.popup--name { justify-content: flex-start; }
+/* the site-wide h2 base rule (css/shared.css) sets the font — this scopes a popup-only 20% reduction and positions it */
+.popup .h2 { font-size: clamp(.912rem, 1.824vw, 1.44rem); }   /* 20% smaller than the site-wide h2 size (css/shared.css) */
+.popup--name .h2 { position: absolute; top: 15%; left: 0; right: 0; transform: translateY(-50%); }
+
+.name-field {
+  position: absolute;
+  top: 39%;
+  left: 50%;
+  width: 76.5cqw;    /* 25% bigger */
+  height: 18.325cqw; /* 25% bigger */
+  transform: translateX(-50%);
+  background: no-repeat center / 100% 100%;
+}
+.name-field input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  text-align: center;
+  font-family: var(--sans);
+  letter-spacing: 0.5pt;
+  font-weight: 700;
+  font-size: max(16px, 3.4cqw);   /* below 16px, mobile browsers zoom in on focus and may not zoom back out reliably — keeping it at 16px+ at every size stops the zoom from ever triggering */
+  color: var(--ink);
+  padding: 0 8%;
+}
+.name-field input::placeholder { color: #9a7d34; font-weight: 400; opacity: .85; }
+
+/* arrow button: the same size as the header buttons, centred under the field.
+   No transform, because .press uses transform for its hover and press feel. */
+.next-btn {
+  position: absolute;
+  top: 69.5%;
+  left: 50%;
+  width: var(--icon-size);
+  margin-left: calc(var(--icon-size) / -2);
+  border: none;
+  background: none;
+  padding: 0;
+  line-height: 0;
+}
+.next-btn img { width: 100%; height: auto; display: block; }
+
+/* ============================================================
+   SCORE BAR — name boxes, on the board and the results screen
+   ============================================================ */
+
+.score-bar {
+  display: flex;
+  justify-content: center;
+  gap: var(--gap);
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+/* six boxes across the row, 10% narrower than the row slot */
+.score-box {
+  flex: 0 0 auto;
+  width: calc((100% - 5 * var(--gap)) / 6 * .9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: no-repeat center / 100% 100%;   /* the img-Nplayername PNG carries the border and shadow */
+  aspect-ratio: 202 / 49.2;
+  padding: .8em 1.1em;
+  font-family: var(--sans);
+  letter-spacing: 0.5pt;
+  font-weight: 400;
+  font-size: clamp(.612rem, 1.152vw, .792rem);
+}
+.score-box .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ============================================================
+   BOARD — 10 cards. The grid shape differs per breakpoint (see --cols/
+   --rows below and in the DESKTOP and PHONE sections); --rows is fixed
+   per shape rather than derived, since 10 doesn't divide evenly across
+   all of them. This base shape (4 across, 3 down: 4 + 4 + 2) is what
+   tablet uses directly, unmodified.
+   ============================================================ */
+
+/* the board fills the content box: name boxes at the top, the turn
+   banner at the bottom, and the cards centred in the space between */
+.screen--board { flex: 1; justify-content: space-between; margin: 0; }
+.screen--board .score-bar {
+  margin: 0;
+  transform: translateY(calc(-1 * var(--game-pad)));   /* flush with the header's bottom edge, the highest it can go */
+}
+
+/* The card size is the smaller of two limits: the rows fitting the height
+   left under the name row and turn banner, and the columns fitting the
+   container's width. Never below 40px, so the cards can't collapse on a
+   short window. */
+.board-grid {
+  --cols: 4;
+  --rows: 3;   /* 10 cards, 4 across: 3 rows (4 + 4 + 2) */
+  --card-w: calc(var(--card-scale) * max(40px, min(
+    calc((100dvh - var(--chrome-top-h) - var(--chrome-bottom-h) - var(--board-reserve) - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.25),
+    calc((100vw - 2 * var(--container-pad) - (var(--cols) - 1) * var(--gap)) / var(--cols))
+  )));
+  /* flex-wrap rather than grid, so a short last row (4 + 4 + 2, 3 + 3 + 3 + 1)
+     sits centred instead of hugging the left edge. --cols and --card-w are
+     overwritten inline by fitBoard() in js/game.js, which measures the real
+     space left and picks the column count that gives the biggest cards —
+     the formula above is only the first-paint fallback. */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: calc(var(--cols) * var(--card-w) + (var(--cols) - 1) * var(--gap));
+  max-width: 100%;
+  gap: var(--gap);
+  margin: 0;
+}
+
+.card {
+  width: var(--card-w);
+  aspect-ratio: 945 / 1181;
+  perspective: 900px;
+  cursor: pointer;
+  touch-action: manipulation;      /* no double-tap zoom when tapping two cards quickly */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;     /* iOS: no "save image" menu on a long press */
+}
+.card.is-matched { visibility: hidden; }
+.card:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+
+/* a found pair "flies into" the current player's score box instead of just
+   disappearing — js/game.js sets --collect-x/-y/-scale to the exact pixel
+   delta between this card and that box, then adds this class, which is
+   what actually animates the move (matched to MATCH_COLLECT in game.js) */
+.card.is-collecting {
+  transition: transform .4725s cubic-bezier(.4, .2, .2, 1), opacity .4725s ease;
+  transform: translate(var(--collect-x, 0), var(--collect-y, 0)) scale(var(--collect-scale, 1));
+  opacity: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .card.is-collecting { transition: opacity .4725s ease; transform: none; }
+}
+
+.card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform .5s cubic-bezier(.4, .2, .2, 1);
+  transform-style: preserve-3d;
+  /* iOS Safari sometimes fails to repaint a 3D-transformed element inside a
+     position: fixed container after its transform changes, and the card
+     looks stuck face-up until something else forces a repaint (a tap).
+     will-change keeps it on its own layer, so the flip-back repaints on its own. */
+  will-change: transform;
+}
+.card.is-flipped .card-inner { transform: rotateY(180deg); }
+
+.card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+/* rounded corners, scaled to the card's own size (a % radius, not a fixed
+   px one) so it reads the same whether the card is desktop's larger
+   portrait shape or mobile's smaller square one */
+.card-face img { width: 100%; height: 100%; object-fit: fill; display: block; pointer-events: none; -webkit-user-drag: none; border-radius: 6%; }
+.card-front { transform: rotateY(180deg); }
+
+/* turn banner: the img-Nplayerturn PNG carries the border and shadow */
+.turn-banner {
+  width: calc(min(100%, 640px) * .36288);
+  aspect-ratio: 455 / 125;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: no-repeat center / 100% 100%;
+  padding: 0 .4em;
+  text-align: center;
+  white-space: nowrap;
+  font-family: var(--sans);
+  letter-spacing: 0.5pt;
+  font-weight: 400;
+  font-size: clamp(.8rem, 1.76vw, 1.04rem);
+}
+.screen--board .turn-banner { transform: translateY(15%); }   /* 15% of its own height, down toward the footer */
+
+/* ============================================================
+   RESULTS — Matching Game 4.0
+   ============================================================ */
+
+.screen--results { margin: 0; }
+
+/* heading + play-again button, side by side as one centred group — this
+   is what shifts "Good game!" left of true centre (the button balances
+   it out on the right), not a standalone left-align */
+.results-head {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(16px, 3vw, 40px);
+  width: 100%;
+  margin-bottom: clamp(20px, 3.5vh, 36px);
+  transform: translateY(calc(-1 * var(--game-pad)));   /* flush with the header's bottom edge, the highest it can go */
+}
+
+.results-title {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(1.44rem, 3vw, 2.4rem);
+  line-height: 1.12;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+
+.replay-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  line-height: 0;
+  cursor: pointer;
+  width: clamp(225px, 18.75vw, 318.75px);   /* 20% bigger, then 25% bigger, then 25% bigger again */
+  flex-shrink: 0;
+}
+.replay-btn img { width: 100%; height: auto; display: block; }
+
+/* desktop only: Play Again lives in the header instead, to the left of
+   EXIT (js/game.js injects/removes .replay-icon-btn there) — sized by
+   height to match the other header icons, same as .icon-btn img, but
+   width:auto instead of var(--icon-size): the play-again asset is a wide
+   text pill, not a small square icon, so matching its height (not width)
+   is what actually reads as "the same size as the other two buttons". */
+.replay-icon-btn img { width: auto; height: var(--icon-size); }
+@media (max-width: 860px) {
+  .replay-icon-btn { display: none; }
+  /* the mobile card set (js/game.js) is square (1181x1181), not the desktop
+     set's portrait 945:1181 — board cards and the results screen's won-pairs
+     thumbnails both need the matching aspect-ratio */
+  .card { aspect-ratio: 1 / 1; }
+  .results-pair img { aspect-ratio: 1 / 1; }
+}
+@media (min-width: 861px) {
+  .results-head .replay-btn { display: none; }
+}
+
+/* a rain of confetti over the whole results screen (stops after a few
+   seconds, see .is-stopped below) — fixed and pointer-events:none, so it
+   never affects layout or blocks clicks */
+.confetti {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 30;
+}
+.confetti-piece {
+  position: absolute;
+  top: -10%;
+  border-radius: 1px;   /* rectangles, just softened at the corners */
+  animation-name: confetti-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+@keyframes confetti-fall {
+  from { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+  to   { transform: translateY(120vh) translateX(var(--drift)) rotate(var(--spin)); opacity: .85; }
+}
+
+/* the rain stops after CONFETTI_DURATION (js/game.js) — paused in place,
+   not removed, so it reads as "stopped" rather than a sudden disappearance */
+.confetti.is-stopped .confetti-piece { animation-play-state: paused; }
+
+@media (prefers-reduced-motion: reduce) {
+  .confetti-piece { animation: none; opacity: 0; }
+}
+
+/* each player's column is the same width and centre as their name box above */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--players), calc((100% - 5 * var(--gap)) / 6 * .9));
+  justify-content: center;
+  gap: var(--gap);
+  width: 100%;
+  align-items: start;
+}
+
+.results-col { display: flex; flex-direction: column; gap: 10px; }
+.results-col .results-name { display: none; }   /* phone only — see the PHONE section */
+
+/* each pair is two cards side by side, shown exactly as the card files */
+.results-pair { display: flex; gap: 6px; }
+.results-pair img {
+  width: calc(50% - 3px);
+  aspect-ratio: 945 / 1181;
+  object-fit: fill;
+  display: block;
+  border-radius: 6%;   /* same proportional rounding as the board cards */
+}
+
+/* ============================================================
+   DESKTOP — 861px and up (the tablet and phone breakpoints below cap at 860px).
+   A phone turned sideways uses this layout too: stacking names above and
+   the banner below the cards leaves almost no height for the cards there.
+   ============================================================ */
+
+@media (min-width: 861px), (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --card-scale: 1;       /* cards at their true maximum: no safety margin */
+    --col-gap: 32px;       /* gap between the name column and the card column */
+  }
+
+  /* two columns: names on the left (20%), cards on the right (80%).
+     No turn banner — the current player's name grows instead (below). */
+  .screen--board {
+    flex-direction: row;
+    gap: var(--col-gap);
+    align-items: stretch;
+    justify-content: center;
+  }
+  .screen--board .turn-banner { display: none; }
+
+  .screen--board .score-bar {
+    flex: 0 0 20%;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    transform: translateY(-10px);   /* cancels the single-row "flush with header" offset, and moves up 10px */
+  }
+  .screen--board .score-box {
+    width: calc(min(80%, 260px) * .84);   /* 20% wider than the previous width */
+    aspect-ratio: 202 / 56.58;   /* 15% taller than the previous height, width unchanged */
+    transform: scale(1);
+    transition: transform .25s ease;
+  }
+  /* the current player's name stands out slightly, in place of the old turn banner */
+  .screen--board .score-box.is-turn { transform: scale(1.15); }
+
+  /* cards sized for the 80% column, 5 across × 2 down. No shared reserve
+     with the name column any more, since it's a separate column now —
+     only the content box's own top/bottom padding is subtracted. */
+  .screen--board .board-grid {
+    flex: 0 0 auto;   /* width comes from --cols × --card-w (set by fitBoard) */
+    --cols: 5;
+    --rows: 2;   /* 10 cards, 5 across × 2 down */
+    --card-w: calc(var(--card-scale) * max(40px, min(
+      calc((100dvh - var(--chrome-top-h) - var(--chrome-bottom-h) - var(--game-pad) * 2 - (var(--rows) - 1) * var(--gap)) / var(--rows) / 1.25),
+      calc((((100vw - 2 * var(--container-pad) - var(--col-gap)) * .8) - (var(--cols) - 1) * var(--gap)) / var(--cols))
+    )));
+    align-self: center;
+    margin: 0;
+    transform: translateY(-10px);
+  }
+}
+
+/* true desktop keeps its fixed 5 × 2 grid in the 80% column, exactly as
+   before — fitBoard() in js/game.js leaves it alone at this width */
+@media (min-width: 861px) {
+  .screen--board .board-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), var(--card-w));
+    justify-content: center;
+    flex: 0 0 80%;
+    width: auto;
+    max-width: none;
+  }
+}
+
+/* ============================================================
+   PHONE — the header and footer changes are in shared.css
+   ============================================================ */
+
+@media (min-width: 641px) and (max-width: 860px) {
+  .score-box { aspect-ratio: 202 / 52.48; font-size: .8rem; }   /* 20% shorter, then 20% shorter again — the board's own score-bar shows this too (below), not just the results screen */
+  /* the popup is 65% of the page on desktop, which left it small on a tablet */
+  .popup { --popup-w: min(105vw, 775px, calc(100vw - 2 * var(--container-pad)), calc(var(--popup-h-avail) * 1938 / 1250)); }   /* 25% bigger, capped to the padded container width */
+  .count-btn img { transform: translateY(calc(-8px - 4vh)) scale(1.21); }   /* no 1.265× desktop enlargement — the wider popup already makes them bigger — but still 10% bigger than that, then 10% bigger again */
+
+  /* end-of-game screen only */
+  .results-title {
+    font-size: clamp(2.2464rem, 4.68vw, 3.744rem);   /* 20% bigger, then 30% bigger again */
+    transform: none;   /* cancels the base rule's own translateY, now that the shift lives here instead of on .results-head */
+    margin-top: calc(-0.8 * var(--game-pad));
+    margin-bottom: clamp(20px, 3.5vh, 36px);   /* the base rule's own results-head margin-bottom, now that results-head has no box of its own to carry it */
+  }
+  /* results-head no longer needs its own box: display:contents promotes
+     its children (title, button) straight into .screen--results's own
+     flex column, so .replay-btn's order below can place it after the
+     matched-pairs grid instead of leaving it stuck between the title
+     and the grid */
+  .results-head { display: contents; }
+  .screen--results { flex: 1; }
+  /* last in flex order, with margin-top:auto pulling it down to the
+     bottom when there's room to spare — but because it's a normal
+     in-flow item now (not position:absolute), if the matched-pairs grid
+     is tall enough to need scrolling the button simply follows after it
+     instead of sitting fixed on top of the last row of cards */
+  .replay-btn { order: 10; margin-top: auto; }
+}
+
+@media (max-width: 640px) {
+  :root { --game-pad: 16px; }
+  .popup { --popup-w: min(117.5vw, 600px, calc(100vw - 2 * var(--container-pad))); gap: 20px; padding: 8% 7%; }   /* 25% bigger, capped to the padded container width */
+  .count-grid { gap: 18px; }
+  .board-grid { --cols: 2; --rows: 4; }   /* 4 pairs (8 cards) on mobile — fitBoard() in js/game.js picks the real best-fit shape, this is just the first-paint fallback before it runs */
+  /* name boxes: three to a row, so each name fits in view */
+  .score-bar { flex-wrap: wrap; }
+  .score-box { width: calc((100% - 2 * var(--gap)) / 3 * .9); aspect-ratio: 202 / 47.232; font-size: .75rem; }   /* 10% shorter than 202:82, then 20% shorter, then 20% shorter again */
+  .screen--board .turn-banner { transform: translateY(calc(15% - 5px)); }   /* 5px higher */
+  .turn-banner { width: calc(min(100%, 640px) * .399168); }   /* 10% wider */
+
+  /* end-of-game screen only */
+  .results-title {
+    font-size: clamp(2.2464rem, 4.68vw, 3.744rem);   /* 20% bigger, then 30% bigger again */
+    transform: none;   /* cancels the base rule's own translateY — see the matching tablet-tier comment above */
+    margin-top: calc(-0.8 * var(--game-pad));
+    margin-bottom: 12px;
+  }
+  /* results-head no longer needs its own box — see the matching tablet-tier comment above */
+  .results-head { display: contents; }
+  .screen--results { flex: 1; }
+
+  .count-btn { display: flex; justify-content: center; }
+  .count-btn img { width: 69.8775%; transform: translateY(calc(-8px - 4vh + 10% + 40px)); }   /* 10% bigger, then 10% bigger, then 10% bigger again */
+  .popup:not(.popup--name) > .h2 { transform: translateY(calc(-15% - 5px)); }   /* the count heading: higher by 15% of its height, and 5px */
+
+  /* last in flex order, with margin-top:auto pulling it to the bottom
+     when there's room — see the matching tablet-tier comment above */
+  .replay-btn { width: min(225px, 64vw); order: 10; margin-top: auto; }
+  .screen--results > .score-bar { display: none; }
+  /* results on a phone: six thin columns made each won card ~20px wide.
+     Instead, one block per player — their name box, then their pairs two
+     to a row — and the list scrolls if it's long. A results list is the
+     one place scrolling on a phone is expected, so the no-scroll rule
+     (desktop) gives way here. */
+  .results-grid { grid-template-columns: 1fr; gap: 18px; }
+  .results-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .results-col .results-name { display: flex; grid-column: 1 / -1; width: calc(50% - 5px); margin-inline: auto; }   /* centred — it only spanned the full row before, sitting at its start (left) by default */
+  .results-pair img { width: calc(50% - 3px); }
+}
+
+/* touch screens: no sticky hover state left behind after a tap */
+@media (hover: none) {
+  .press:hover { transform: none; }
+  .press:active { transform: translateY(3px) scale(.97); }
+}
