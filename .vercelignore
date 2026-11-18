@@ -1,0 +1,14 @@
+# Adobe Illustrator design sources — not used by the deployed site, and large (100MB+)
+*.ai
+
+# Design mockup screenshots — not used by the deployed site
+Reference Images/
+
+# Superseded legacy landing-page asset set (index.html uses /assets instead)
+01 Landing Page/Assets/
+
+# Pre-compression originals backup (kept locally only)
+Asset Backups (pre-compression, 2026-11-18)/
+
+# Reference audio, not used by the deployed site
+00 Audio Files/
