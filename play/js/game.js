@@ -8,50 +8,16 @@
 
 (function () {
   var IMG_DIR   = '../03%20Matching%20Card%20Game/Assets/';
-  // renamed from plain "Cards" once the mobile set got its own folder
   var CARD_DIR  = '../03%20Matching%20Card%20Game/Assets/Cards%20-%20Desktop%20View/';
   var CARD_BACK = CARD_DIR + 'Back.jpg';
 
-  // mobile (≤860px) uses a separate set of card images, square (1181x1181)
-  // instead of the desktop set's portrait (800x1000) — same 20 cards, same
-  // order, just renumbered. The mobile set now comes in two languages,
-  // switched in-game by the header's 中文 button (state.lang, below):
-  // English (desktop num - 2) and Chinese (english num + 24). The back is
-  // shared — it's just the brand mark, not language-specific.
-  var MOBILE_CARD_DIR     = '../03%20Matching%20Card%20Game/Assets/Cards%20-%20Mobile%20View/';
-  var MOBILE_ENGLISH_DIR  = MOBILE_CARD_DIR + 'English/';
-  var MOBILE_CHINESE_DIR  = MOBILE_CARD_DIR + 'Chinese/';
-  var MOBILE_CARD_BACK    = MOBILE_CARD_DIR + 'Back.jpg';
-  var MOBILE_ENGLISH_OFFSET = 2;    // english num = desktop num - 2
-  var ENGLISH_TO_CHINESE    = 24;   // chinese num = english num + 24
-
+  // same card art on mobile as desktop — mobile just shows fewer pairs
+  // (PAIRS_PER_GAME_MOBILE, below), not different images
   function cardSrc(num) {
-    if (!state.isMobile) return CARD_DIR + num + '.jpg';
-    var englishNum = num - MOBILE_ENGLISH_OFFSET;
-    return state.lang === 'zh'
-      ? MOBILE_CHINESE_DIR + (englishNum + ENGLISH_TO_CHINESE) + '.jpg'
-      : MOBILE_ENGLISH_DIR + englishNum + '.jpg';
+    return CARD_DIR + num + '.jpg';
   }
   function cardBackSrc() {
-    return state.isMobile ? MOBILE_CARD_BACK : CARD_BACK;
-  }
-
-  // re-points every currently-visible card face (board or results) at the
-  // other language's image, without rebuilding any HTML — just an <img>
-  // src swap, so it doesn't disturb flipped/matched state mid-game
-  function refreshCardLanguage() {
-    document.querySelectorAll('.card').forEach(function (el) {
-      var img = el.querySelector('.card-front img');
-      var idx = Number(el.getAttribute('data-idx'));
-      if (img && state.deck[idx]) img.src = cardSrc(state.deck[idx].num);
-    });
-    document.querySelectorAll('.results-pair').forEach(function (el) {
-      var a = Number(el.getAttribute('data-a'));
-      var b = Number(el.getAttribute('data-b'));
-      var imgs = el.querySelectorAll('img');
-      if (imgs[0]) imgs[0].src = cardSrc(a);
-      if (imgs[1]) imgs[1].src = cardSrc(b);
-    });
+    return CARD_BACK;
   }
 
   // 10 phrase pairs — each is [Hokkien-face card number, meaning-face card number]
@@ -101,8 +67,7 @@
     pendingMatch: null,   // [a, b] — a shown match, waiting for the player to clear it off the board
     matchedCount: 0,
     lock: false,
-    isMobile: false,   // set once per game, in startGame() — which card set (desktop/mobile) this game's images come from
-    lang: 'en'   // mobile card language — 'en' or 'zh', toggled by the header's 中文 button, sticky across games
+    isMobile: false   // set once per game, in startGame() — only affects how many pairs are dealt
   };
 
   function esc(s) {
@@ -135,21 +100,6 @@
     btn.innerHTML = '<img src="../00%20Shared%20Assets/btn-playagain%20505x105px.png" alt="" />';
     btn.addEventListener('click', renderCount);
     chromeTopRight.insertBefore(btn, chromeTopRight.firstChild);
-  }
-
-  /* ============================================================
-     The header's 中文 button swaps every visible card's language —
-     only mobile has separate English/Chinese art, so cardSrc() (above)
-     just ignores state.lang on desktop. A plain src swap, not a
-     re-render: it has to leave flipped/matched state untouched mid-game.
-     ============================================================ */
-  var langBtn = document.querySelector('[aria-label="Switch language to Chinese"]');
-  if (langBtn) {
-    langBtn.addEventListener('click', function () {
-      state.lang = state.lang === 'zh' ? 'en' : 'zh';
-      langBtn.setAttribute('aria-pressed', state.lang === 'zh' ? 'true' : 'false');
-      refreshCardLanguage();
-    });
   }
 
   /* ============================================================
@@ -307,11 +257,9 @@
      column count from 2 to 5 and keeps the one that gives the biggest
      cards: a tall phone, a phone turned sideways, a tablet and a desktop
      window all land on different shapes, which a fixed 2 × 5 or 5 × 2
-     can't do. Card art is 945:1181 on desktop — but square (1:1) on
-     mobile (see cardSrc() above), so the height-based half of the fit
-     below needs state.isMobile's own ratio, not a single fixed constant,
-     or it undersizes every mobile card by about 25%. */
-  var DESKTOP_CARD_RATIO = 1181 / 945;
+     can't do. Card art is 945:1181 everywhere (same images on mobile
+     as desktop). */
+  var CARD_RATIO = 1181 / 945;
   var FIT_SAFETY = 0.97;   // a little breathing room so nothing touches the edges
 
   function fitBoard() {
@@ -324,7 +272,7 @@
       grid.style.removeProperty('--card-w');
       return;
     }
-    var cardRatio = state.isMobile ? 1 : DESKTOP_CARD_RATIO;
+    var cardRatio = CARD_RATIO;
     var bar = screen.querySelector('.score-bar');
     var banner = screen.querySelector('.turn-banner');
     var gap = parseFloat(getComputedStyle(grid).columnGap) || 12;

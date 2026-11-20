@@ -323,11 +323,6 @@ body.in-game .chrome-bottom { display: none; }
 .replay-icon-btn img { width: auto; height: var(--icon-size); }
 @media (max-width: 860px) {
   .replay-icon-btn { display: none; }
-  /* the mobile card set (js/game.js) is square (1181x1181), not the desktop
-     set's portrait 945:1181 — board cards and the results screen's won-pairs
-     thumbnails both need the matching aspect-ratio */
-  .card { aspect-ratio: 1 / 1; }
-  .results-pair img { aspect-ratio: 1 / 1; }
 }
 @media (min-width: 861px) {
   .results-head .replay-btn { display: none; }
