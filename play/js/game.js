@@ -279,15 +279,29 @@
     var screenStyle = getComputedStyle(screen);
     var availW, availH;
 
+    // measured off #app, not .screen--board itself: .screen--board is a
+    // flex child whose height can overflow #app if a previous pass picked
+    // too-large a card size (flex items don't shrink below their content's
+    // intrinsic size by default), and measuring an already-overflowing
+    // element here would feed that inflated number straight back into the
+    // next card-size calculation. #app's own size comes from fixed
+    // positioning (top/bottom/left/right), not from its content, so it
+    // can't be thrown off this way — its clientWidth/clientHeight do
+    // still include its own padding, which .screen--board's content area
+    // doesn't get, so that's subtracted back out below.
+    var appStyle = getComputedStyle(app);
+    var appPadV = parseFloat(appStyle.paddingTop) + parseFloat(appStyle.paddingBottom);
+    var appPadH = parseFloat(appStyle.paddingLeft) + parseFloat(appStyle.paddingRight);
+
     if (screenStyle.flexDirection === 'row') {
       // names in a column on the left, cards on the right
-      availW = screen.clientWidth - bar.offsetWidth - (parseFloat(screenStyle.columnGap) || 0);
-      availH = screen.clientHeight;
+      availW = app.clientWidth - appPadH - bar.offsetWidth - (parseFloat(screenStyle.columnGap) || 0);
+      availH = app.clientHeight - appPadV;
     } else {
       // names on top, turn banner underneath
       var bannerH = banner && banner.offsetParent ? banner.offsetHeight : 0;
-      availW = screen.clientWidth;
-      availH = screen.clientHeight - bar.offsetHeight - bannerH - 2 * gap;
+      availW = app.clientWidth - appPadH;
+      availH = app.clientHeight - appPadV - bar.offsetHeight - bannerH - 2 * gap;
     }
 
     var total = state.deck.length;

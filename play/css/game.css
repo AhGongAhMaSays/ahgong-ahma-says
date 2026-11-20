@@ -171,6 +171,34 @@ body.in-game .chrome-bottom { display: none; }
    tablet uses directly, unmodified.
    ============================================================ */
 
+/* the board needs real width to lay cards out across — a portrait phone
+   doesn't have it. Rather than asking the player to turn their phone,
+   the whole in-game view is rotated 90° with CSS instead — header
+   included, not just the board/results content — pinned to the top-left
+   corner at the viewport's height/width swapped, then rotated + shifted
+   back into view. Same "forced landscape" trick as Say It
+   (say-it/css/game.css), just applied to body.in-game rather than to an
+   individual screen, since here the header (.chrome-top, position:fixed
+   in css/shared.css) needs to rotate along with the board/results instead
+   of being hidden. A transform on body becomes the containing block for
+   its position:fixed descendants (the header and #app both), which is
+   what carries them along. Nothing about .screen--board or
+   .screen--results itself needs to change; fitBoard() (js/game.js)
+   measures the real (now swapped) box size and lays cards out accordingly. */
+@media (max-width: 860px) and (orientation: portrait) {
+  body.in-game {
+    position: fixed;
+    top: 0;
+    left: 0;
+    margin: 0;
+    width: 100vh;
+    width: 100dvh;
+    height: 100vw;
+    transform-origin: top left;
+    transform: rotate(90deg) translateY(-100%);
+  }
+}
+
 /* the board fills the content box: name boxes at the top, the turn
    banner at the bottom, and the cards centred in the space between */
 .screen--board { flex: 1; justify-content: space-between; margin: 0; }
@@ -386,9 +414,12 @@ body.in-game .chrome-bottom { display: none; }
    DESKTOP — 861px and up (the tablet and phone breakpoints below cap at 860px).
    A phone turned sideways uses this layout too: stacking names above and
    the banner below the cards leaves almost no height for the cards there.
+   The forced-rotation case above (a portrait phone faking landscape) needs
+   it for the same reason — it's really just as wide, the media query
+   engine just can't see past the device's real (unrotated) orientation.
    ============================================================ */
 
-@media (min-width: 861px), (orientation: landscape) and (max-height: 500px) {
+@media (min-width: 861px), (orientation: landscape) and (max-height: 500px), (max-width: 860px) and (orientation: portrait) {
   :root {
     --card-scale: 1;       /* cards at their true maximum: no safety margin */
     --col-gap: 32px;       /* gap between the name column and the card column */
@@ -436,6 +467,16 @@ body.in-game .chrome-bottom { display: none; }
     margin: 0;
     transform: translateY(-10px);
   }
+
+  /* results: same reasoning as the board above — .screen--results still
+     stacks title/score-bar/grid/replay-btn vertically (it has no row
+     layout of its own), which doesn't fit the much shorter logical height
+     this condition implies. Use the header's icon-based replay button
+     (true desktop's approach) instead of the inline one, which otherwise
+     gets pushed past the bottom of that short height by its own
+     margin-top:auto. */
+  .replay-icon-btn { display: block; }
+  .results-head .replay-btn { display: none; }
 }
 
 /* true desktop keeps its fixed 5 × 2 grid in the 80% column, exactly as
@@ -522,6 +563,21 @@ body.in-game .chrome-bottom { display: none; }
   .results-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .results-col .results-name { display: flex; grid-column: 1 / -1; width: calc(50% - 5px); margin-inline: auto; }   /* centred — it only spanned the full row before, sitting at its start (left) by default */
   .results-pair img { width: calc(50% - 3px); }
+}
+
+/* the phone tier's single-column results list (just above) is sized for a
+   real ≤640px-wide screen — under the forced-rotation at the top of this
+   file, the device is still reporting that width even though there's
+   really a landscape amount of room on screen, so left alone it would
+   force the same cramped single column here too. Revert just the
+   single-column-specific properties (placed after that tier so it wins
+   the cascade); the rest of the phone tier's results tweaks (bigger
+   title, play-again button pinned to the bottom) read fine either way. */
+@media (max-width: 640px) and (orientation: portrait) {
+  .results-grid { grid-template-columns: repeat(var(--players), calc((100% - 5 * var(--gap)) / 6 * .9)); gap: var(--gap); }
+  .results-col { display: flex; flex-direction: column; gap: 10px; }
+  .results-col .results-name { display: none; }
+  .screen--results > .score-bar { display: flex; }
 }
 
 /* touch screens: no sticky hover state left behind after a tap */
